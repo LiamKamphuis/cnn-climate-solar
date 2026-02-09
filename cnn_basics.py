@@ -48,23 +48,68 @@ def create_basic_cnn():
     
     return model
 
-def load_and_preprocess_data():
-    """Load MNIST dataset and preprocess it for CNN training."""
-    print("Loading MNIST dataset...")
-    (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+def generate_synthetic_mnist_data():
+    """
+    Generate synthetic data similar to MNIST for demonstration purposes.
+    This is used when the actual MNIST dataset cannot be downloaded.
     
-    # Normalize pixel values to [0, 1]
-    x_train = x_train.astype('float32') / 255.0
-    x_test = x_test.astype('float32') / 255.0
+    Creates simple digit-like patterns for educational purposes.
+    """
+    print("Generating synthetic digit-like data for demonstration...")
+    np.random.seed(42)
     
-    # Reshape to add channel dimension (required for CNN)
-    x_train = np.expand_dims(x_train, -1)
-    x_test = np.expand_dims(x_test, -1)
+    # Generate training data
+    x_train = np.random.rand(6000, 28, 28, 1).astype('float32')
+    y_train = np.random.randint(0, 10, 6000)
+    
+    # Add some simple patterns based on labels
+    for i in range(len(x_train)):
+        label = y_train[i]
+        # Create a simple pattern based on the digit
+        x_train[i] = x_train[i] * 0.3  # Base noise
+        # Add a characteristic pattern for each digit
+        start_row = 5 + label
+        start_col = 5 + label
+        x_train[i, start_row:start_row+10, start_col:start_col+10, 0] += 0.5
+        
+    # Generate test data
+    x_test = np.random.rand(1000, 28, 28, 1).astype('float32')
+    y_test = np.random.randint(0, 10, 1000)
+    
+    for i in range(len(x_test)):
+        label = y_test[i]
+        x_test[i] = x_test[i] * 0.3
+        start_row = 5 + label
+        start_col = 5 + label
+        x_test[i, start_row:start_row+10, start_col:start_col+10, 0] += 0.5
     
     print(f"Training data shape: {x_train.shape}")
     print(f"Test data shape: {x_test.shape}")
     
     return (x_train, y_train), (x_test, y_test)
+
+def load_and_preprocess_data():
+    """Load MNIST dataset and preprocess it for CNN training."""
+    try:
+        print("Attempting to load MNIST dataset...")
+        (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+        
+        # Normalize pixel values to [0, 1]
+        x_train = x_train.astype('float32') / 255.0
+        x_test = x_test.astype('float32') / 255.0
+        
+        # Reshape to add channel dimension (required for CNN)
+        x_train = np.expand_dims(x_train, -1)
+        x_test = np.expand_dims(x_test, -1)
+        
+        print(f"Training data shape: {x_train.shape}")
+        print(f"Test data shape: {x_test.shape}")
+        
+        return (x_train, y_train), (x_test, y_test)
+    except Exception as e:
+        print(f"Could not download MNIST: {e}")
+        print("Falling back to synthetic data for demonstration...")
+        return generate_synthetic_mnist_data()
 
 def train_model(model, x_train, y_train, x_test, y_test, epochs=5):
     """Train the CNN model and return training history."""
